@@ -27,6 +27,60 @@ function initializeDatabase() {
   });
 }
 
+// Bot onText listener for the /generate command
+bot.onText(/\/generate (\d+) (\w+) (\w+)/, (msg, match) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+
+  // Admin check
+  if (!adminIds.includes(userId)) {
+    bot.sendMessage(chatId, "You are not authorized to use this command.");
+    return;
+  }
+
+  const numberOfKeys = parseInt(match[1]);
+  const rotationInterval = match[2]; // e.g., '15m'
+  const validity = match[3]; // e.g., '1Day'
+
+  // Validate the number of keys and validity period
+  if (isNaN(numberOfKeys) || numberOfKeys <= 0) {
+    bot.sendMessage(chatId, "Invalid number of keys specified.");
+    return;
+  }
+
+  if (!['1Day', '3Days', '7Days'].includes(validity)) {
+    bot.sendMessage(chatId, "Invalid validity period. Choose from 1Day, 3Days, or 7Days.");
+    return;
+  }
+
+  const validityPeriod = validity === '1Day' ? 1 : (validity === '3Days' ? 3 : 7);
+  let generatedKeys = [];
+
+  for (let i = 0; i < numberOfKeys; i++) {
+    const newKey = generateUniqueKey();
+    insertKey(newKey, validityPeriod, rotationInterval);
+    generatedKeys.push(newKey);
+  }
+
+  bot.sendMessage(chatId, `Generated keys:\n${generatedKeys.join('\n')}`);
+});
+
+// Function to generate a unique key
+function generateUniqueKey() {
+  return Math.random().toString(36).substr(2, 9);
+}
+
+// Function to insert a new key into the database
+function insertKey(key, validityPeriod, rotationInterval) {
+  const stmt = db.prepare("INSERT INTO proxy_keys (key, validity_period, rotation_interval) VALUES (?, ?, ?)");
+  stmt.run(key, validityPeriod, rotationInterval, (err) => {
+    if (err) {
+      console.error("Error inserting key:", err.message);
+    }
+  });
+  stmt.finalize();
+}
+
 bot.onText(/\/redeem (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const key = match[1];
