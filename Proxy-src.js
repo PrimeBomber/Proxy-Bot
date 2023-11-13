@@ -18,7 +18,7 @@ const db = new sqlite3.Database('proxy_bot.db', (err) => {
 
 // Function to create the proxy_keys table
 function initializeDatabase() {
-  db.run("CREATE TABLE IF NOT EXISTS proxy_keys (key TEXT PRIMARY KEY, validity_period INTEGER NOT NULL, redeemed BOOLEAN NOT NULL DEFAULT 0)", (err) => {
+  db.run("CREATE TABLE IF NOT EXISTS proxy_keys (key TEXT PRIMARY KEY, rotation_interval TEXT; validity_period INTEGER NOT NULL, redeemed BOOLEAN NOT NULL DEFAULT 0)", (err) => {
     if (err) {
       console.error("Error creating table:", err.message);
     } else {
